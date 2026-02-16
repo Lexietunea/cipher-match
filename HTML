@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ARCIUM // CIPHER MATCH</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+    :root {
+      --black: #060608;
+      --gray-dark: #111115;
+      --gray-mid: #1e1e26;
+      --gray-light: #2e2e3a;
+      --purple: #7c3aed;
+      --purple-bright: #a855f7;
+      --purple-glow: #c084fc;
+      --pink: #ec4899;
+      --pink-soft: #f472b6;
+      --white: #f8f8fc;
+      --white-dim: #9494aa;
+      --card-w: 90px;
+      --card-h: 126px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Rajdhani', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ---- BACKGROUND ---- */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 30%, rgba(124,58,237,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 80% 70%, rgba(236,72,153,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(124,58,237,0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* dot-matrix grid */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(168,85,247,0.18) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* animated scan line */
+    .scanline {
+      position: fixed;
+      top: -4px;
+      left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(168,85,247,0.6), rgba(236,72,153,0.4), transparent);
+      animation: scan 6s linear infinite;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    @keyframes scan {
+      0%   { top: -4px; opacity: 0; }
+      5%   { opacity: 1; }
+      95%  { opacity: 1; }
+      100% { top: 100vh; opacity: 0; }
+    }
+
+    /* ---- LAYOUT ---- */
+    .wrapper {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 40px;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(168,85,247,0.3);
+      border-radius: 4px;
+      padding: 4px 14px 4px 10px;
+      margin-bottom: 14px;
+    }
+
+    .logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--purple-bright);
+      box-shadow: 0 0 8px var(--purple-bright);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    .logo-text {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--purple-glow);
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 700;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--white) 0%, var(--purple-glow) 50%, var(--pink-soft) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(168,85,247,0.4));
+    }
+
+    .subtitle {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--white-dim);
+      letter-spacing: 4px;
+      margin-top: 8px;
+    }
+
+    /* ---- HUD ---- */
+    .hud {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hud-box {
+      background: rgba(30,30,38,0.8);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 6px;
+      padding: 10px 20px;
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .hud-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      color: var(--white-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .hud-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--purple-bright);
+      line-height: 1;
+      text-shadow: 0 0 16px rgba(168,85,247,0.5);
+    }
+
+    .hud-value.pink { color: var(--pink); text-shadow: 0 0 16px rgba(236,72,153,0.5); }
+
+    /* ---- BOARD ---- */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(4, var(--card-w));
+      gap: 12px;
+      perspective: 1000px;
+    }
+
+    @media (max-width: 480px) {
+      :root { --card-w: 74px; --card-h: 104px; }
+      #board { gap: 8px; }
+    }
+
+    /* ---- CARD ---- */
+    .card {
+      width: var(--card-w);
+      height: var(--card-h);
+      cursor: pointer;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 8px;
+    }
+
+    .card.flipped   { transform: rotateY(180deg); }
+    .card.matched   { transform: rotateY(180deg); cursor: default; }
+
+    .card.matched .card-front {
+      border-color: var(--pink);
+      box-shadow: 0 0 18px rgba(236,72,153,0.5), inset 0 0 12px rgba(236,72,153,0.08);
+    }
+
+    .card.matched .card-front::after {
+      opacity: 1;
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* BACK */
+    .card-back {
+      background: var(--gray-mid);
+      border: 1px solid rgba(168,85,247,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .card-back::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(168,85,247,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168,85,247,0.12) 1px, transparent 1px);
+      background-size: 14px 14px;
+    }
+
+    .card-back-symbol {
+      position: relative;
+      z-index: 1;
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(168,85,247,0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 16px;
+      color: rgba(168,85,247,0.7);
+      box-shadow: 0 0 12px rgba(168,85,247,0.3);
+      animation: spin-glow 4s ease-in-out infinite;
+    }
+
+    @keyframes spin-glow {
+      0%, 100% { box-shadow: 0 0 8px rgba(168,85,247,0.3); }
+      50% { box-shadow: 0 0 20px rgba(168,85,247,0.7); }
+    }
+
+    /* FRONT */
+    .card-front {
+      transform: rotateY(180deg);
+      background: var(--gray-dark);
+      border: 1px solid rgba(168,85,247,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 0 12px rgba(124,58,237,0.2);
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    /* matched glow overlay */
+    .card-front::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(236,72,153,0.15), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .card-icon {
+      font-size: 32px;
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 7.5px;
+      letter-spacing: 1px;
+      color: var(--white-dim);
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 6px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    /* ---- BUTTONS ---- */
+    .btn-row {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-bright));
+      color: var(--white);
+      box-shadow: 0 0 20px rgba(124,58,237,0.4);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 32px rgba(168,85,247,0.7);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(168,85,247,0.4);
+      color: var(--white-dim);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--purple-bright);
+      color: var(--white);
+      background: rgba(168,85,247,0.08);
+    }
+
+    /* ---- WIN OVERLAY ---- */
+    #win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(6,6,8,0.93);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #win-overlay.show {
+      display: flex;
+      animation: fadeIn 0.4s ease;
+    }
+
+    /* ---- LOSE OVERLAY ---- */
+    #lose-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(6,6,8,0.95);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #lose-overlay.show {
+      display: flex;
+      animation: fadeIn 0.4s ease;
+    }
+
+    /* lose overlay red background pulse */
+    #lose-overlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 40%, rgba(220,38,38,0.18) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(239,68,68,0.1) 0%, transparent 55%);
+      pointer-events: none;
+      animation: redPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes redPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .lose-title {
+      position: relative;
+      font-size: clamp(36px, 8vw, 72px);
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: #ef4444;
+      text-shadow: 0 0 30px rgba(239,68,68,0.7), 0 0 60px rgba(239,68,68,0.3);
+      animation: redFlicker 0.12s infinite alternate;
+      z-index: 1;
+    }
+
+    @keyframes redFlicker {
+      from { text-shadow: 0 0 20px rgba(239,68,68,0.6), 0 0 40px rgba(239,68,68,0.2); }
+      to   { text-shadow: 0 0 40px rgba(239,68,68,1),   0 0 80px rgba(239,68,68,0.5); }
+    }
+
+    .lose-sub {
+      position: relative;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: rgba(239,68,68,0.7);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .lose-detail {
+      position: relative;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--white-dim);
+      letter-spacing: 2px;
+      z-index: 1;
+    }
+
+    .btn-lose {
+      position: relative;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      border: 1px solid rgba(239,68,68,0.6);
+      border-radius: 4px;
+      background: rgba(239,68,68,0.12);
+      color: #ef4444;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 1;
+    }
+
+    .btn-lose:hover {
+      background: rgba(239,68,68,0.22);
+      box-shadow: 0 0 24px rgba(239,68,68,0.5);
+      transform: translateY(-1px);
+    }
+
+    /* timer warning states */
+    #timer.warning {
+      color: #f97316;
+      text-shadow: 0 0 16px rgba(249,115,22,0.7);
+      animation: timerPulse 0.8s ease-in-out infinite;
+    }
+
+    #timer.danger {
+      color: #ef4444;
+      text-shadow: 0 0 20px rgba(239,68,68,0.9);
+      animation: timerPulse 0.4s ease-in-out infinite;
+    }
+
+    #timer-box.warning { border-color: rgba(249,115,22,0.5); }
+    #timer-box.danger  { border-color: rgba(239,68,68,0.6); }
+
+    @keyframes timerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .win-title {
+      font-size: clamp(36px, 8vw, 72px);
+      font-weight: 700;
+      letter-spacing: 8px;
+      background: linear-gradient(135deg, var(--purple-bright), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(168,85,247,0.6));
+      animation: flicker 0.1s infinite alternate;
+    }
+
+    @keyframes flicker {
+      from { filter: drop-shadow(0 0 20px rgba(168,85,247,0.5)); }
+      to   { filter: drop-shadow(0 0 40px rgba(168,85,247,0.9)); }
+    }
+
+    .win-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--white-dim);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .win-stats {
+      display: flex;
+      gap: 32px;
+      margin: 8px 0;
+    }
+
+    .win-stat-val {
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--pink);
+      text-shadow: 0 0 20px rgba(236,72,153,0.6);
+      text-align: center;
+    }
+
+    .win-stat-lbl {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      color: var(--white-dim);
+      letter-spacing: 3px;
+      text-align: center;
+    }
+
+    /* ---- PARTICLES ---- */
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99;
+      border-radius: 50%;
+      animation: rise var(--dur) ease-out forwards;
+    }
+
+    @keyframes rise {
+      0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+
+    /* ---- STATUS BAR ---- */
+    .status-bar {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--white-dim);
+      letter-spacing: 2px;
+      margin-top: 18px;
+      height: 14px;
+      transition: color 0.3s;
+    }
+
+    .status-bar.match { color: var(--pink); }
+    .status-bar.miss  { color: rgba(255,255,255,0.3); }
+
+    /* horizontal rule */
+    .divider {
+      width: 100%;
+      max-width: 450px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(168,85,247,0.4), transparent);
+      margin: 16px 0;
+    }
+
+    /* difficulty row */
+    .diff-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .diff-btn {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(168,85,247,0.25);
+      background: transparent;
+      color: var(--white-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .diff-btn.active, .diff-btn:hover {
+      border-color: var(--purple-bright);
+      color: var(--purple-glow);
+      background: rgba(168,85,247,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<div class="wrapper">
+  <header>
+    <div class="logo-badge">
+      <div class="logo-dot"></div>
+      <span class="logo-text">Arcium</span>
+    </div>
+    <h1>Cipher Match</h1>
+    <div class="subtitle">// encrypted memory protocol //</div>
+  </header>
+
+  <div class="hud">
+    <div class="hud-box">
+      <div class="hud-label">Moves</div>
+      <div class="hud-value" id="moves">00</div>
+    </div>
+    <div class="hud-box">
+      <div class="hud-label">Pairs</div>
+      <div class="hud-value pink" id="pairs">0/8</div>
+    </div>
+    <div class="hud-box" id="timer-box">
+      <div class="hud-label">Time Left</div>
+      <div class="hud-value" id="timer">07:00</div>
+    </div>
+  </div>
+
+  <div class="diff-row">
+    <button class="diff-btn active" onclick="setDiff(this,'easy')">Easy</button>
+    <button class="diff-btn" onclick="setDiff(this,'normal')">Normal</button>
+    <button class="diff-btn" onclick="setDiff(this,'hard')">Cipher</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div id="board"></div>
+
+  <div class="status-bar" id="status">&nbsp;</div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="initGame()">↺ &nbsp;New Game</button>
+    <button class="btn btn-secondary" onclick="showHint()">◈ &nbsp;Hint</button>
+  </div>
+</div>
+
+<!-- WIN OVERLAY -->
+<div id="win-overlay">
+  <div class="win-title">DECRYPTED</div>
+  <div class="win-sub">// all cipher pairs matched — encryption broken //</div>
+  <div class="win-stats">
+    <div>
+      <div class="win-stat-val" id="win-moves">--</div>
+      <div class="win-stat-lbl">MOVES</div>
+    </div>
+    <div>
+      <div class="win-stat-val" id="win-time">--</div>
+      <div class="win-stat-lbl">TIME USED</div>
+    </div>
+    <div>
+      <div class="win-stat-val" id="win-score">--</div>
+      <div class="win-stat-lbl">SCORE</div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="initGame(); document.getElementById('win-overlay').classList.remove('show'); document.getElementById('lose-overlay').classList.remove('show')">↺ &nbsp;Play Again</button>
+</div>
+
+<!-- LOSE OVERLAY -->
+<div id="lose-overlay">
+  <div class="lose-title">ENCRYPTED</div>
+  <div class="lose-sub">// time expired — cipher unbroken //</div>
+  <div class="lose-detail" id="lose-pairs-msg"></div>
+  <button class="btn btn-lose" onclick="initGame(); document.getElementById('lose-overlay').classList.remove('show'); document.getElementById('win-overlay').classList.remove('show')">↺ &nbsp;Try Again</button>
+</div>
+
+<script>
+  // ---- CARD DATA ----
+  const CARDS = [
+    { icon: '🔐', label: 'ENCRYPTED' },
+    { icon: '⚙️', label: 'gMPC' },
+    { icon: '🛡️', label: 'PRIVACY' },
+    { icon: '🌊', label: 'DARK POOLS' },
+    { icon: '🔗', label: 'MPC' },
+    { icon: '🚫', label: 'NEVER DECRYPTED' },
+    { icon: '💎', label: 'TOKEN' },
+    { icon: '🔺', label: 'RTG' },
+  ];
+
+  let difficulty = 'easy'; // easy: delay 1.5s, normal: 1.0s, hard: 0.6s
+  const DELAYS = { easy: 1500, normal: 950, hard: 550 };
+
+  let board = [], flipped = [], matched = [], moves = 0, pairs = 0;
+  let locked = false, timerInterval = null, elapsed = 0, started = false;
+
+  function setDiff(btn, d) {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    difficulty = d;
+    initGame();
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function fmt(s) {
+    const m = String(Math.floor(s / 60)).padStart(2,'0');
+    const sc = String(s % 60).padStart(2,'0');
+    return `${m}:${sc}`;
+  }
+
+  function fmtMoves(n) { return String(n).padStart(2,'0'); }
+
+  const COUNTDOWN = 7 * 60; // 7 minutes in seconds
+
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    elapsed = 0;
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      elapsed++;
+      updateTimerDisplay();
+      if (elapsed >= COUNTDOWN) {
+        stopTimer();
+        showLose();
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const remaining = COUNTDOWN - elapsed;
+    const el = document.getElementById('timer');
+    const box = document.getElementById('timer-box');
+    el.textContent = fmt(remaining);
+    // warning states
+    el.classList.remove('warning','danger');
+    box.classList.remove('warning','danger');
+    if (remaining <= 60) {
+      el.classList.add('danger'); box.classList.add('danger');
+    } else if (remaining <= 120) {
+      el.classList.add('warning'); box.classList.add('warning');
+    }
+  }
+
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function initGame() {
+    stopTimer();
+    flipped = []; matched = []; moves = 0; pairs = 0;
+    locked = false; started = false; elapsed = 0;
+    document.getElementById('moves').textContent = '00';
+    document.getElementById('pairs').textContent = '0/8';
+    document.getElementById('timer').textContent = '07:00';
+    document.getElementById('timer').className = 'hud-value';
+    document.getElementById('timer-box').className = 'hud-box';
+    setStatus('&nbsp;');
+
+    board = shuffle([...CARDS, ...CARDS].map((c, i) => ({ ...c, id: i })));
+    renderBoard();
+  }
+
+  function renderBoard() {
+    const el = document.getElementById('board');
+    el.innerHTML = '';
+    board.forEach((card, idx) => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.dataset.idx = idx;
+      div.innerHTML = `
+        <div class="card-face card-back">
+          <div class="card-back-symbol">⬡</div>
+        </div>
+        <div class="card-face card-front">
+          <div class="card-icon">${card.icon}</div>
+          <div class="card-label">${card.label}</div>
+        </div>
+      `;
+      div.addEventListener('click', () => onCardClick(idx));
+      el.appendChild(div);
+    });
+  }
+
+  function getCardEl(idx) {
+    return document.querySelector(`.card[data-idx="${idx}"]`);
+  }
+
+  function onCardClick(idx) {
+    if (locked) return;
+    if (matched.includes(idx)) return;
+    if (flipped.includes(idx)) return;
+
+    if (!started) { started = true; startTimer(); }
+
+    const el = getCardEl(idx);
+    el.classList.add('flipped');
+    flipped.push(idx);
+
+    if (flipped.length === 2) {
+      moves++;
+      document.getElementById('moves').textContent = fmtMoves(moves);
+      checkMatch();
+    }
+  }
+
+  function checkMatch() {
+    locked = true;
+    const [a, b] = flipped;
+    if (board[a].icon === board[b].icon) {
+      // match!
+      matched.push(a, b);
+      pairs++;
+      document.getElementById('pairs').textContent = `${pairs}/8`;
+      getCardEl(a).classList.add('matched');
+      getCardEl(b).classList.add('matched');
+      spawnParticles(getCardEl(b));
+      setStatus('// pair decrypted //', 'match');
+      flipped = [];
+      locked = false;
+      if (pairs === 8) setTimeout(showWin, 400);
+    } else {
+      setStatus('// no match — re-encrypting //', 'miss');
+      setTimeout(() => {
+        getCardEl(a).classList.remove('flipped');
+        getCardEl(b).classList.remove('flipped');
+        flipped = [];
+        locked = false;
+        setStatus('&nbsp;');
+      }, DELAYS[difficulty]);
+    }
+  }
+
+  function setStatus(msg, cls) {
+    const el = document.getElementById('status');
+    el.innerHTML = msg;
+    el.className = 'status-bar' + (cls ? ' ' + cls : '');
+  }
+
+  function showWin() {
+    stopTimer();
+    const score = Math.max(100, Math.floor(10000 / (moves * (elapsed || 1)) * 1000));
+    document.getElementById('win-moves').textContent = moves;
+    document.getElementById('win-time').textContent = fmt(elapsed);
+    document.getElementById('win-score').textContent = score;
+    document.getElementById('win-overlay').classList.add('show');
+    launchConfetti();
+  }
+
+  function showLose() {
+    locked = true;
+    document.getElementById('lose-pairs-msg').textContent =
+      `// pairs decrypted: ${pairs} / 8 //`;
+    document.getElementById('lose-overlay').classList.add('show');
+    launchStaticNoise();
+  }
+
+  function launchStaticNoise() {
+    for (let i = 0; i < 50; i++) {
+      setTimeout(() => {
+        const p = document.createElement('div');
+        const size = 3 + Math.random() * 6;
+        const colors = ['#ef4444','#dc2626','#b91c1c','#fca5a5','#ff0000'];
+        p.className = 'particle';
+        const startX = Math.random() * window.innerWidth;
+        const startY = Math.random() * window.innerHeight;
+        const dx = (Math.random() - 0.5) * 120;
+        const dy = (Math.random() - 0.5) * 120;
+        p.style.cssText = `
+          left:${startX}px; top:${startY}px;
+          width:${size}px; height:${size}px;
+          background:${colors[Math.floor(Math.random()*colors.length)]};
+          border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+          --dx:${dx}px; --dy:${dy}px;
+          --dur:${0.6 + Math.random()*0.8}s;
+          opacity: 0.85;
+        `;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1500);
+      }, i * 20);
+    }
+  }
+
+  function showHint() {
+    if (locked || pairs === 8) return;
+    // find two unmatched unflipped cards with same icon
+    const unmatched = board
+      .map((c, i) => ({ ...c, i }))
+      .filter(c => !matched.includes(c.i) && !flipped.includes(c.i));
+    const seen = {};
+    let pair = null;
+    for (const c of unmatched) {
+      if (seen[c.icon] !== undefined) { pair = [seen[c.icon], c.i]; break; }
+      seen[c.icon] = c.i;
+    }
+    if (!pair) return;
+    pair.forEach(idx => {
+      const el = getCardEl(idx);
+      el.style.transition = 'box-shadow 0.2s';
+      el.style.boxShadow = '0 0 24px rgba(236,72,153,0.9)';
+      setTimeout(() => { el.style.boxShadow = ''; el.style.transition = ''; }, 1000);
+    });
+  }
+
+  // ---- PARTICLES ----
+  function spawnParticles(el) {
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = ['#a855f7','#ec4899','#c084fc','#f472b6','#7c3aed'];
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement('div');
+      const size = 4 + Math.random() * 6;
+      const angle = (Math.random() * 360) * Math.PI / 180;
+      const dist = 40 + Math.random() * 80;
+      p.className = 'particle';
+      p.style.cssText = `
+        left:${cx}px; top:${cy}px;
+        width:${size}px; height:${size}px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        --dx:${Math.cos(angle)*dist}px;
+        --dy:${Math.sin(angle)*dist - 40}px;
+        --dur:${0.5 + Math.random()*0.6}s;
+        box-shadow: 0 0 4px currentColor;
+      `;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1200);
+    }
+  }
+
+  function launchConfetti() {
+    for (let i = 0; i < 60; i++) {
+      setTimeout(() => {
+        const p = document.createElement('div');
+        const size = 4 + Math.random() * 8;
+        const colors = ['#a855f7','#ec4899','#c084fc','#f472b6','#7c3aed','#ffffff'];
+        p.className = 'particle';
+        const startX = Math.random() * window.innerWidth;
+        const startY = Math.random() * window.innerHeight * 0.3;
+        const dx = (Math.random() - 0.5) * 200;
+        const dy = 80 + Math.random() * 200;
+        p.style.cssText = `
+          left:${startX}px; top:${startY}px;
+          width:${size}px; height:${size}px;
+          background:${colors[Math.floor(Math.random()*colors.length)]};
+          border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+          --dx:${dx}px; --dy:${dy}px;
+          --dur:${0.8 + Math.random()*1.2}s;
+        `;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 2000);
+      }, i * 30);
+    }
+  }
+
+  // ---- INIT ----
+  initGame();
+</script>
+</body>
+</html>
